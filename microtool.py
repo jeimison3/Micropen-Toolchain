@@ -62,7 +62,7 @@ def chooseAPort():
     defColunasLista = 2
     defColunasSpacing = "\t| "
 
-    print("Digite o numero correspondente ao port escolhido:")
+    print("Type the correspondent port number chosen:")
     i = 0
     STRprint = ""
     for PORT in portList:
@@ -112,9 +112,8 @@ def chooseAPort():
 
 
 def setupProject():
-    PROJ_NAME = input('Nome do projeto: ')
+    PROJ_NAME = input('Project name: ')
     WORK_PROJ = WORKSPACE+"\\"+PROJ_NAME if isWin() else WORKSPACE+"/"+PROJ_NAME
-    print("Pasta: "+WORKSPACE)
 
     vectPort = chooseAPort()
     PORT_LIB_INCL = vectPort[0].replace("\\","/") # Converte para endereçamento da IDE
@@ -145,7 +144,13 @@ def setupProject():
     kdevprj.write("[Buildset]\nBuildItems=@Variant(\\x00\\x00\\x00\\t\\x00\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x0b\\x00\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x10\\x00P\\x00i\\x00c\\x00B\\x00a\\x00s\\x00e\\x003)\n\n")
     kdevprj.write("[Cppcheck]\ncheckPerformance=true\n\n") # Otimização para Low-Processing
 
-    kdevprj.write("[CustomBuildSystem][BuildConfig0][ToolBuild]\nArguments=\nEnabled=false\nEnvironment=\nExecutable=\nType=0\n\n")
+    #Build settings:
+    kdevprj.write("[CustomBuildSystem]\nCurrentConfiguration=BuildConfig0\n\n")
+    kdevprj.write("[CustomBuildSystem][BuildConfig0]\nBuildDir=file:///"+SETUPPATH.replace("\\","/") + "\nTitle=Microtool Build\n\n")
+    kdevprj.write("[CustomBuildSystem][BuildConfig0][ToolBuild]\n")
+    kdevprj.write("Arguments=compila.py '"+PROJ_NAME+"' '"+WORK_PROJ.replace("\\","/")+"'\n")
+    kdevprj.write("Enabled=true\nEnvironment=\nExecutable=file:python\nType=0\n")
+
     kdevprj.write("[CustomBuildSystem][BuildConfig0][ToolClean]\nArguments=\nEnabled=false\nEnvironment=\nExecutable=\nType=3\n\n")
     kdevprj.write("[CustomBuildSystem][BuildConfig0][ToolConfigure]\nArguments=\nEnabled=false\nEnvironment=\nExecutable=\nType=1\n\n")
     kdevprj.write("[CustomBuildSystem][BuildConfig0][ToolInstall]\nArguments=\nEnabled=false\nEnvironment=\nExecutable=\nType=2\n\n")
@@ -157,7 +162,7 @@ def setupProject():
     kdevprj.write("[Launch][Launch Configuration 0]\nConfigured Launch Modes=execute\nConfigured Launchers=scriptAppLauncher\nName=SDCC Run\nType=Script Application\n\n")
 
     kdevprj.write("[Launch][Launch Configuration 0][Data]\n")
-    kdevprj.write("Arguments='"+PROJ_NAME+"' '"+WORK_PROJ.replace("\\","/")+"'\n")
+    kdevprj.write("Arguments='"+PROJ_NAME+"' '"+WORK_PROJ.replace("\\","/")+"' -exec\n")
     kdevprj.write("EnvironmentGroup=\n")
     kdevprj.write("Executable=file:///" + SETUPPATH.replace("\\","/") + "/compila.py\n")
     kdevprj.write("Execute on Remote Host=false\n")
@@ -166,24 +171,22 @@ def setupProject():
     kdevprj.write("Remote Host=\n")
     kdevprj.write("Run current file=false\n")
     kdevprj.write("Working Directory=")
+
+
     kdevprj.close()
     #==============================================================================================
     # Configuração do reconstrutor de parâmetros
-    cfg = configparser.ConfigParser({
-        'PROJECT':{
-            'NAME':PROJ_NAME,
-            'PATH':WORK_PROJ
-        },
-        'ARCH':{
-            'PORT':iPROJ_PORT,
-            'PORTPROC':iPROJ_PORT_PROCESSOR,
-            'ISFREE':'0'
-        },
-        'INCLUDES':{
-            'PORTPATH':PORT_LIB_INCL,
-            'PORTPROCLIB':iPROJ_PORT_PROCESSOR_LIB,
-        }
-    })
+    cfg = configparser.ConfigParser()
+    cfg.add_section('PROJECT')
+    cfg.set('PROJECT', 'NAME', PROJ_NAME)
+    cfg.set('PROJECT', 'PATH', WORK_PROJ)
+    cfg.add_section('ARCH')
+    cfg.set('ARCH', 'PORT', iPROJ_PORT)
+    cfg.set('ARCH', 'PORTPROC', iPROJ_PORT_PROCESSOR)
+    cfg.set('ARCH', 'ISFREE', '0')
+    cfg.add_section('INCLUDES')
+    cfg.set('INCLUDES', 'PORTPATH', PORT_LIB_INCL)
+    cfg.set('INCLUDES', 'PORTPROCLIB', iPROJ_PORT_PROCESSOR_LIB)
     #==============================================================================================
     # Salva configuração
     with open(WORK_PROJ+'\\settings.ini', 'w') as ponteiroEscrita:
@@ -200,11 +203,11 @@ def setupProject():
     mainfile.close()
     #BUILDSET.h
     toolfile = open(WORK_PROJ+'\\BUILDSET.h',mode="w",encoding='utf-8')
-    toolfile.write("/*ARQUIVO GERADO AUTOMATICAMENTE, NÃO FAÇA ALTERAÇÕES */")
+    toolfile.write("/* AUTOMATICALLY GENERATED FILE, DON'T MAKE ANY CHANGE */")
     toolfile.close()
 
     # Concluído
-    print("\n| Projeto construido em \""+WORK_PROJ+"\".\n| Para alterar as propriedades atualmente suportadas no seu projeto, veja outras opções na ferramenta.\n")
+    print("\n| Project built at \""+WORK_PROJ+"\".\n| To make any supported properties update in your project see more options in main menu.\n")
 
 
 
@@ -213,8 +216,8 @@ def setupProject():
 INIT_VARS = MicroToolInit() # Configurações iniciais
 WORKSPACE = INIT_VARS[0] # Atualiza Workspace
 while(True):
-    print("=================================================\nAssistente de configuração de toolchain SDCC.\n=================================================\n\n")
-    print("1. Novo projeto.\n2. Abrir projeto.\nx. Sair.")
+    print("=================================================\nConfiguration assistant of toolchain SDCC.\n=================================================\n\n")
+    print("1. New project.\n2. Open project.\nx. Exit.")
     OPT_IN = input("=> ")
     if OPT_IN.lower() == "x":
         break
@@ -222,4 +225,4 @@ while(True):
     if(OPCAO == 1):
         setupProject()
     else:
-        print("Opção desconhecida ou não implementada. Desculpe :/")
+        print("Unknown option or not implemented. Sorry :/")
