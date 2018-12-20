@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 portList = ["mcs51","z80","z180","r2k","r3ka","gbz80","tlcs90","ds390","pic16","pic14","TININative","ds400","hc08","s08","stm8"]
-WORKSPACE = "E:\\Programação\\GITProjs\\PROJECT1BASE"
+WORKSPACE = "" # Definido a cada inicialização
 
 portArchs = {
     "pic14":{
@@ -20,6 +20,26 @@ portArchs = {
 
 SETUPPATH = str(Path().absolute())
 __OS = platform.system()
+
+def isWin():
+    return __OS == "Windows"
+
+def MicroToolInit():
+    PySettsMicrotool = "micropen.conf"
+    cfg = configparser.ConfigParser()
+    if not os.path.isfile(PySettsMicrotool): # Não foi configurado
+        WSPACE_REF = os.environ['USERPROFILE']+"\\Micronpen" if isWin() else os.environ['HOME']+"/Micronpen"
+        cfg.add_section('Projects')
+        cfg.set('Projects', 'Workspace', WORKSPACE)
+        if not os.path.exists(WORKSPACE):
+            os.makedirs(WORKSPACE)
+        with open(PySettsMicrotool, 'w') as ponteiroEscrita:
+            cfg.write(ponteiroEscrita)
+    else: # Foi configurado
+        cfg.read(PySettsMicrotool)
+        WSPACE_REF = cfg.get('Projects', 'Workspace')
+    return [WSPACE_REF]
+
 
 def listFilesPath(pathname,extens):
     retn = []
@@ -92,9 +112,9 @@ def chooseAPort():
 
 
 def setupProject():
-#PROJ_NAME = "TEST01"
     PROJ_NAME = input('Nome do projeto: ')
-    WORK_PROJ = WORKSPACE+"\\"+PROJ_NAME
+    WORK_PROJ = WORKSPACE+"\\"+PROJ_NAME if isWin() else WORKSPACE+"/"+PROJ_NAME
+    print("Pasta: "+WORKSPACE)
 
     vectPort = chooseAPort()
     PORT_LIB_INCL = vectPort[0].replace("\\","/") # Converte para endereçamento da IDE
@@ -190,7 +210,8 @@ def setupProject():
 
 
 
-
+INIT_VARS = MicroToolInit() # Configurações iniciais
+WORKSPACE = INIT_VARS[0] # Atualiza Workspace
 while(True):
     print("=================================================\nAssistente de configuração de toolchain SDCC.\n=================================================\n\n")
     print("1. Novo projeto.\n2. Abrir projeto.\nx. Sair.")
